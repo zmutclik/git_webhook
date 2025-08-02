@@ -1,0 +1,25 @@
+services:
+  webhook:
+    image: zmutclik/git_webhook:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - repository:/app/repository
+      - logs:/app/logs
+    environment:
+      - BRANCH=main
+    restart: always
+    secrets:
+      - webhook_secret
+
+volumes:
+  repository:
+#    driver_opts:
+#      type: nfs
+#      o: addr=${NFS_ADDRESS},nfsvers=4
+#      device: ${NFS_PATH}
+  logs:
+
+secrets:
+  webhook_secret:
+    file: ./webhook_secret.txt
