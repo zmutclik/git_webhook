@@ -1,0 +1,20 @@
+services:
+  webhook:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - repository:/app/repository
+      - logs:/app/logs
+    environment:
+      - REPO_PATH=/app/repository
+      - SECRET_TOKEN=your-secret-token
+    restart: always
+
+volumes:
+  data:
+#    driver_opts:
+#      type: nfs
+#      o: addr=${NFS_ADDRESS},nfsvers=4
+#      device: ${NFS_PATH}
+  logs:
