@@ -163,3 +163,4 @@ cython_debug/
 logs/*.log
 repository/*
 !repository/.gitkeep
+webhook_secret.txt

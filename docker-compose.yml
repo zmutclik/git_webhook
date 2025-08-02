@@ -7,14 +7,19 @@ services:
       - repository:/app/repository
       - logs:/app/logs
     environment:
-      - REPO_PATH=/app/repository
-      - SECRET_TOKEN=your-secret-token
+      - BRANCH=main
     restart: always
+    secrets:
+      - webhook_secret
 
 volumes:
-  data:
+  repository:
 #    driver_opts:
 #      type: nfs
 #      o: addr=${NFS_ADDRESS},nfsvers=4
 #      device: ${NFS_PATH}
   logs:
+
+secrets:
+  webhook_secret:
+    file: ./webhook_secret.txt

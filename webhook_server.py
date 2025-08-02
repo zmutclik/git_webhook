@@ -11,19 +11,34 @@ from fastapi import FastAPI, Request, HTTPException, Header, BackgroundTasks
 from fastapi.responses import JSONResponse
 import uvicorn
 
+BRANCH_NAME = os.environ.get('BRANCH', 'main') 
+def get_secret(secret_name):
+    try:
+        # Docker secrets disimpan di /run/secrets/<secret_name>
+        with open(f'/run/secrets/{secret_name}', 'r') as secret_file:
+            return secret_file.read().strip()
+    except IOError:
+        # Fallback ke environment variable untuk pengembangan lokal
+        return os.environ.get(secret_name)
+    
 # Konfigurasi
 CONFIG = {
     "PORT": 8000,
     "HOST": "0.0.0.0",
-    "SECRET_TOKEN": "your-secret-token-here",  # Ganti dengan token rahasia Anda
+    "SECRET_TOKEN": get_secret("webhook_secret") or "your-secret-token-here",
     "REPO_PATH": "./repository",  # Path ke repository lokal
-    "BRANCH": "main",  # Branch yang akan di-pull
+    "BRANCH": BRANCH_NAME,
     "POST_DEPLOY_SCRIPT": None,  # Script yang dijalankan setelah pull (opsional)
 }
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", handlers=[logging.FileHandler(f"./logs/{datetime.now().strftime('%Y-%m')}_webhook.log"), logging.StreamHandler()]
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.FileHandler(f"./logs/{datetime.now().strftime('%Y-%m')}_webhook.log"),
+        logging.StreamHandler(),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -272,6 +287,6 @@ if __name__ == "__main__":
     logger.info(f"Branch: {CONFIG['BRANCH']}")
     logger.info(f"Port: {CONFIG['PORT']}")
     logger.info("FastAPI Documentation: http://localhost:8000/docs")
-    logger.info("=====================================")
+    logger.info("========================================================")
 
     uvicorn.run("webhook_server:app", host=CONFIG["HOST"], port=CONFIG["PORT"], reload=False, log_level="info")
