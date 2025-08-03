@@ -164,3 +164,6 @@ logs/*.log
 repository/*
 !repository/.gitkeep
 webhook_secret.txt
+secrets
+ssh-config
+config
