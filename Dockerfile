@@ -9,7 +9,7 @@ COPY webhook_models.py .
 COPY setup_ssh_keys.sh .
 RUN pip install --no-cache-dir -r requirements.txt \
     && apt-get update \
-    && apt-get install -y git curl jq \
+    && apt-get install -y git curl jq nano \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p secrets \
     && chmod -R 600 secrets \
