@@ -5,7 +5,7 @@
 set -e
 
 SECRETS_DIR="./secrets"
-SSH_CONFIG_DIR="~/.ssh"
+SSH_CONFIG_DIR="/root/.ssh"
 
 echo "🔑 SSH Deploy Keys Setup"
 echo "========================"
