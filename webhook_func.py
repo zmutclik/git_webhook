@@ -134,7 +134,7 @@ async def process_webhook_background(CONFIG, payload: dict, event_type: str):
 
         if ref == target_ref:
             logger.info(f"Push ke branch {CONFIG['BRANCH']} terdeteksi")
-            success, message = await pull_repository()
+            success, message = await pull_repository(CONFIG)
 
             if success:
                 logger.info("Background webhook berhasil diproses")
