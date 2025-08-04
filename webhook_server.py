@@ -263,4 +263,4 @@ if __name__ == "__main__":
     logger.info("FastAPI Documentation: http://localhost:7000/docs")
     logger.info("========================================================")
 
-    uvicorn.run("webhook_server:app", host=CONFIG["HOST"], port=CONFIG["PORT"], reload=False, log_level="info")
+    uvicorn.run("webhook_server:app", host=CONFIG["HOST"], port=CONFIG["PORT"], reload=False, log_level="warning")
