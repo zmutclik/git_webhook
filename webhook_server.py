@@ -46,6 +46,13 @@ async def webhook(
 
     # Log request
     client_ip = request.client.host
+    ipproxy = None
+    try:
+        if request.headers.get("X-Real-IP") is not None:
+            client_ip = request.headers.get("X-Real-IP")
+            ipproxy = request.client.host
+    except:
+        pass
     logger.info(f"Webhook diterima dari IP: {client_ip}")
 
     # Baca request body
