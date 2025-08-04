@@ -5,12 +5,13 @@ services:
       - "8000:8000"
     volumes:
       - repository:/app/repository
+      - secrets:/app/secrets
       - logs:/app/logs
     environment:
       - BRANCH=main
       - REPO_PATH=/app/repository
+      - GIT_URL_SSH=git@github.com:your/repo.git
     restart: always
-
 volumes:
   repository:
 #    driver_opts:
@@ -18,3 +19,4 @@ volumes:
 #      o: addr=${NFS_ADDRESS},nfsvers=4
 #      device: ${NFS_PATH}
   logs:
+  secrets:

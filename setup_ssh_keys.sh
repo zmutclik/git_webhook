@@ -18,7 +18,7 @@ chmod 700 "$SECRETS_DIR" "$SSH_CONFIG_DIR"
 generate_ssh_key() {
     local service="$1"
     local email="$2"
-    local key_file="$SECRETS_DIR/${service}_deploy_key"
+    local key_file="$SECRETS_DIR/${service}deploy_key"
     
     if [ -f "$key_file" ]; then
         echo "⚠️  SSH key untuk $service sudah ada: $key_file"
@@ -49,7 +49,7 @@ setup_ssh_config() {
 Host github.com
     HostName github.com
     User git
-    IdentityFile /app/secrets/github_deploy_key
+    IdentityFile /app/secrets/deploy_key
     IdentitiesOnly yes
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
@@ -58,16 +58,16 @@ Host github.com
 Host gitlab.com
     HostName gitlab.com
     User git
-    IdentityFile /app/secrets/gitlab_deploy_key
+    IdentityFile /app/secrets/deploy_key
     IdentitiesOnly yes
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
 
-# Gitea (example)
-Host gitea.example.com
-    HostName gitea.example.com
+# Gitea RSDarsono ID
+Host git.rsdarsono.id
+    HostName git.rsdarsono.id
     User git
-    IdentityFile /app/secrets/gitea_deploy_key
+    IdentityFile /app/secrets/deploy_key
     IdentitiesOnly yes
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
@@ -157,9 +157,9 @@ update_webhook_config() {
     echo "⚙️  Updating webhook configuration..."
     
     # Update config/webhook.env
-    if [ ! -f "config/webhook.env" ]; then
-        mkdir -p config
-    fi
+    # if [ ! -f "config/webhook.env" ]; then
+    #     mkdir -p config
+    # fi
     
     # Add SSH config jika belum ada
     if ! grep -q "GIT_HOST" config/webhook.env 2>/dev/null; then
@@ -188,9 +188,9 @@ case "${1:-menu}" in
         echo "Generating keys dengan email: $email"
         
         # Generate keys for common services
-        generate_ssh_key "github" "$email"
-        generate_ssh_key "gitlab" "$email" 
-        generate_ssh_key "deploy" "$email"  # Generic key
+        # generate_ssh_key "github_" "$email"
+        # generate_ssh_key "gitlab_" "$email" 
+        generate_ssh_key "" "$email"  # Generic key
         
         setup_ssh_config
         update_webhook_config

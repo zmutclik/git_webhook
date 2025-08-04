@@ -19,8 +19,8 @@ Host gitlab.com
     IdentitiesOnly yes
     StrictHostKeyChecking no
 
-Host gitea.example.com
-    HostName gitea.example.com
+Host git.rsdarsono.id
+    HostName git.rsdarsono.id
     User git
     IdentityFile /app/secrets/gitea_deploy_key
     IdentitiesOnly yes

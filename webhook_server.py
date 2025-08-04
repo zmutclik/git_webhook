@@ -1,29 +1,20 @@
 import os
-import json
-import hmac
-import hashlib
-import subprocess
-import logging
 from datetime import datetime, date
 from typing import Optional, Dict, Any
-from pydantic import BaseModel
+
 from fastapi import FastAPI, Request, HTTPException, Header, BackgroundTasks
 from fastapi.responses import JSONResponse
 import uvicorn
+from webhook_func import ensure_webhook_secret, logger, get_secret, verify_signature, pull_repository, process_webhook_background, execute_command
+from webhook_models import WebhookResponse, StatusResponse, ManualPullResponse
 
 BRANCH_NAME = os.environ.get("BRANCH", "main")
-REPOSITORY_PATH = os.environ.get("REPO_PATH", "./repository")  # Path ke repository lokal
+REPOSITORY_PATH = os.environ.get("REPO_PATH", "./repository")
+GIT_URL_SSH = os.environ.get("GIT_URL_SSH", "git@gitlab.com:zmutclik/test-repo.git")
 
 
-def get_secret(secret_name):
-    try:
-        # Docker secrets disimpan di /run/secrets/<secret_name>
-        with open(f"/run/secrets/{secret_name}", "r") as secret_file:
-            return secret_file.read().strip()
-    except IOError:
-        # Fallback ke environment variable untuk pengembangan lokal
-        return os.environ.get(secret_name)
-
+# Pastikan webhook secret ada saat startup
+ensure_webhook_secret()
 
 # Konfigurasi
 CONFIG = {
@@ -35,120 +26,13 @@ CONFIG = {
     "POST_DEPLOY_SCRIPT": None,  # Script yang dijalankan setelah pull (opsional)
 }
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(f"./logs/{datetime.now().strftime('%Y-%m')}_webhook.log"),
-        logging.StreamHandler(),
-    ],
-)
-logger = logging.getLogger(__name__)
-
-
-# Pydantic models
-class WebhookResponse(BaseModel):
-    status: str
-    message: str
-    timestamp: str
-    output: Optional[str] = None
-    error: Optional[str] = None
-
-
-class StatusResponse(BaseModel):
-    status: str
-    timestamp: str
-    config: Dict[str, Any]
-
-
-class ManualPullResponse(BaseModel):
-    status: str
-    message: str
-    output: Optional[str] = None
-    error: Optional[str] = None
-
 
 # FastAPI app
-app = FastAPI(title="Git Webhook Server", description="Aplikasi webhook untuk otomatis pull git repository", version="1.0.0")
-
-
-def verify_signature(payload_body: bytes, signature_header: str, secret: str) -> bool:
-    """Verifikasi signature dari GitHub webhook"""
-    if not signature_header:
-        return False
-
-    hash_object = hmac.new(secret.encode("utf-8"), msg=payload_body, digestmod=hashlib.sha256)
-    expected_signature = "sha256=" + hash_object.hexdigest()
-
-    return hmac.compare_digest(expected_signature, signature_header)
-
-
-async def execute_command(command: str, cwd: Optional[str] = None) -> tuple[bool, str]:
-    """Eksekusi command dengan error handling"""
-    try:
-        result = subprocess.run(command, shell=True, cwd=cwd, capture_output=True, text=True, timeout=300)  # 5 menit timeout
-
-        if result.returncode == 0:
-            logger.info(f"Command berhasil: {command}")
-            logger.info(f"Output: {result.stdout}")
-            return True, result.stdout
-        else:
-            logger.error(f"Command gagal: {command}")
-            logger.error(f"Error: {result.stderr}")
-            return False, result.stderr
-
-    except subprocess.TimeoutExpired:
-        logger.error(f"Command timeout: {command}")
-        return False, "Command timeout"
-    except Exception as e:
-        logger.error(f"Exception saat eksekusi command: {str(e)}")
-        return False, str(e)
-
-
-async def pull_repository() -> tuple[bool, str]:
-    """Pull perubahan terbaru dari repository"""
-    logger.info("Memulai git pull...")
-
-    # Cek apakah direktori repository ada
-    if not os.path.exists(CONFIG["REPO_PATH"]):
-        logger.error(f"Repository path tidak ditemukan: {CONFIG['REPO_PATH']}")
-        return False, "Repository path tidak ditemukan"
-
-    # Git pull
-    pull_command = f"git pull origin {CONFIG['BRANCH']}"
-    success, output = await execute_command(pull_command, cwd=CONFIG["REPO_PATH"])
-
-    if not success:
-        return False, f"Git pull gagal: {output}"
-
-    # Jalankan post-deploy script jika ada
-    if CONFIG["POST_DEPLOY_SCRIPT"]:
-        logger.info("Menjalankan post-deploy script...")
-        script_success, script_output = await execute_command(CONFIG["POST_DEPLOY_SCRIPT"], cwd=CONFIG["REPO_PATH"])
-
-        if not script_success:
-            logger.warning(f"Post-deploy script gagal: {script_output}")
-
-    return True, output
-
-
-async def process_webhook_background(payload: dict, event_type: str):
-    """Background task untuk memproses webhook"""
-    logger.info(f"Background processing webhook: {event_type}")
-
-    if event_type == "push":
-        ref = payload.get("ref", "")
-        target_ref = f"refs/heads/{CONFIG['BRANCH']}"
-
-        if ref == target_ref:
-            logger.info(f"Push ke branch {CONFIG['BRANCH']} terdeteksi")
-            success, message = await pull_repository()
-
-            if success:
-                logger.info("Background webhook berhasil diproses")
-            else:
-                logger.error("Background webhook gagal diproses")
+app = FastAPI(
+    title="Git Webhook Server",
+    description="Aplikasi webhook untuk otomatis pull git repository",
+    version="1.0.0",
+)
 
 
 @app.post("/webhook", response_model=WebhookResponse)
@@ -208,7 +92,7 @@ async def webhook(
             success, message = await pull_repository()
 
             # Juga jalankan background task untuk processing tambahan
-            background_tasks.add_task(process_webhook_background, payload, event_type)
+            background_tasks.add_task(process_webhook_background, CONFIG, payload, event_type)
 
             if success:
                 return WebhookResponse(status="success", message="Repository berhasil diupdate", timestamp=datetime.now().isoformat(), output=message)
@@ -248,7 +132,7 @@ async def manual_pull():
     """Endpoint untuk manual pull (untuk testing)"""
     logger.info("Manual pull dipicu")
 
-    success, message = await pull_repository()
+    success, message = await pull_repository(CONFIG)
 
     if success:
         return ManualPullResponse(status="success", message="Manual pull berhasil", output=message)
@@ -277,6 +161,82 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "checks": {"repository_exists": repo_exists, "config_valid": bool(CONFIG["REPO_PATH"] and CONFIG["BRANCH"])},
     }
+
+
+@app.post("/clone")
+async def clone_repository():
+    """Endpoint untuk clone repository (inisialisasi awal)"""
+    logger.info("Clone repository dipicu")
+
+    # Cek apakah direktori sudah ada
+    if os.path.exists(CONFIG["REPO_PATH"]):
+        # Cek apakah sudah ada .git folder
+        git_path = os.path.join(CONFIG["REPO_PATH"], ".git")
+        if os.path.exists(git_path):
+            logger.warning(f"Repository sudah ada di {CONFIG['REPO_PATH']}")
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": "Repository sudah ada. Gunakan /manual-pull untuk update atau hapus folder terlebih dahulu",
+                    "timestamp": datetime.now().isoformat(),
+                },
+            )
+        else:
+            # Direktory ada tapi bukan git repo, hapus isinya
+            logger.info(f"Membersihkan direktori {CONFIG['REPO_PATH']}")
+            success, output = await execute_command(f"rm -rf {CONFIG['REPO_PATH']}/*")
+            if not success:
+                logger.error(f"Gagal membersihkan direktori: {output}")
+                raise HTTPException(
+                    status_code=500,
+                    detail={"status": "error", "message": "Gagal membersihkan direktori", "error": output, "timestamp": datetime.now().isoformat()},
+                )
+    else:
+        # Buat direktori parent jika belum ada
+        parent_dir = os.path.dirname(CONFIG["REPO_PATH"])
+        if parent_dir and not os.path.exists(parent_dir):
+            try:
+                os.makedirs(parent_dir, exist_ok=True)
+                logger.info(f"Direktori parent dibuat: {parent_dir}")
+            except Exception as e:
+                logger.error(f"Gagal membuat direktori parent: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail={"status": "error", "message": "Gagal membuat direktori parent", "error": str(e), "timestamp": datetime.now().isoformat()},
+                )
+
+    # Clone repository
+    clone_command = f"git clone -b {CONFIG['BRANCH']} {GIT_URL_SSH} {CONFIG['REPO_PATH']}"
+    logger.info(f"Menjalankan: {clone_command}")
+
+    success, output = await execute_command(clone_command)
+
+    if not success:
+        logger.error(f"Git clone gagal: {output}")
+        raise HTTPException(
+            status_code=500, detail={"status": "error", "message": "Git clone gagal", "error": output, "timestamp": datetime.now().isoformat()}
+        )
+
+    logger.info("Repository berhasil di-clone")
+
+    # Jalankan post-deploy script jika ada
+    if CONFIG["POST_DEPLOY_SCRIPT"]:
+        logger.info("Menjalankan post-deploy script setelah clone...")
+        script_success, script_output = await execute_command(CONFIG["POST_DEPLOY_SCRIPT"], cwd=CONFIG["REPO_PATH"])
+
+        if not script_success:
+            logger.warning(f"Post-deploy script gagal: {script_output}")
+
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "message": f"Repository berhasil di-clone ke {CONFIG['REPO_PATH']}",
+            "output": output,
+            "timestamp": datetime.now().isoformat(),
+        },
+    )
 
 
 if __name__ == "__main__":
