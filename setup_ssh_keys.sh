@@ -5,7 +5,7 @@
 set -e
 
 SECRETS_DIR="./secrets"
-SSH_CONFIG_DIR="./ssh-config"
+SSH_CONFIG_DIR="~/.ssh"
 
 echo "🔑 SSH Deploy Keys Setup"
 echo "========================"
@@ -13,6 +13,7 @@ echo "========================"
 # Create directories
 mkdir -p "$SECRETS_DIR" "$SSH_CONFIG_DIR"
 chmod 700 "$SECRETS_DIR" "$SSH_CONFIG_DIR"
+
 
 # Function to generate SSH key
 generate_ssh_key() {
