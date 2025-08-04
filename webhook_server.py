@@ -12,8 +12,6 @@ BRANCH_NAME = os.environ.get("BRANCH", "main")
 REPOSITORY_PATH = os.environ.get("REPO_PATH", "./repository")
 GIT_URL_SSH = os.environ.get("GIT_URL_SSH", "git@gitlab.com:zmutclik/test-repo.git")
 
-
-# Pastikan webhook secret ada saat startup
 ensure_webhook_secret()
 
 # Konfigurasi
