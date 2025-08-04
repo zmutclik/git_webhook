@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 ENV BRANCH=main
+ENV REPO_PATH="/app/repository"
 WORKDIR /app
 COPY requirements.txt .
 COPY webhook_server.py .

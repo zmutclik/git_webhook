@@ -8,6 +8,7 @@ services:
       - logs:/app/logs
     environment:
       - BRANCH=main
+      - REPO_PATH=/app/repository
     restart: always
 
 volumes:

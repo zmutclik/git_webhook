@@ -11,22 +11,26 @@ from fastapi import FastAPI, Request, HTTPException, Header, BackgroundTasks
 from fastapi.responses import JSONResponse
 import uvicorn
 
-BRANCH_NAME = os.environ.get('BRANCH', 'main') 
+BRANCH_NAME = os.environ.get("BRANCH", "main")
+REPOSITORY_PATH = os.environ.get("REPO_PATH", "./repository")  # Path ke repository lokal
+
+
 def get_secret(secret_name):
     try:
         # Docker secrets disimpan di /run/secrets/<secret_name>
-        with open(f'/run/secrets/{secret_name}', 'r') as secret_file:
+        with open(f"/run/secrets/{secret_name}", "r") as secret_file:
             return secret_file.read().strip()
     except IOError:
         # Fallback ke environment variable untuk pengembangan lokal
         return os.environ.get(secret_name)
-    
+
+
 # Konfigurasi
 CONFIG = {
     "PORT": 8000,
     "HOST": "0.0.0.0",
     "SECRET_TOKEN": get_secret("webhook_secret") or "your-secret-token-here",
-    "REPO_PATH": "./repository",  # Path ke repository lokal
+    "REPO_PATH": REPOSITORY_PATH,
     "BRANCH": BRANCH_NAME,
     "POST_DEPLOY_SCRIPT": None,  # Script yang dijalankan setelah pull (opsional)
 }
