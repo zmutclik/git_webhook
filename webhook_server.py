@@ -87,7 +87,7 @@ async def webhook(
                 logger.info(f"Latest commit: {latest_commit.get('id', '')[:8]} - {latest_commit.get('message', '')}")
 
             # Pull repository (sync untuk response cepat)
-            success, message = await pull_repository()
+            success, message = await pull_repository(CONFIG)
 
             # Juga jalankan background task untuk processing tambahan
             background_tasks.add_task(process_webhook_background, CONFIG, payload, event_type)
