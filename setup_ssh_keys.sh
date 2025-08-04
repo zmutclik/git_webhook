@@ -11,8 +11,8 @@ echo "🔑 SSH Deploy Keys Setup"
 echo "========================"
 
 # Create directories
-mkdir -p "$SECRETS_DIR" "$SSH_CONFIG_DIR"
-chmod 700 "$SECRETS_DIR" "$SSH_CONFIG_DIR"
+# mkdir -p "$SECRETS_DIR" "$SSH_CONFIG_DIR"
+# chmod 700 "$SECRETS_DIR" "$SSH_CONFIG_DIR"
 
 # Function to generate SSH key
 generate_ssh_key() {
@@ -193,7 +193,7 @@ case "${1:-menu}" in
         generate_ssh_key "" "$email"  # Generic key
         
         setup_ssh_config
-        update_webhook_config
+        # update_webhook_config
         show_public_keys
         ;;
         
