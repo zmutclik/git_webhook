@@ -3,15 +3,16 @@ services:
     image: zmutclik/git_webhook:latest
     container_name: git_webhook
     ports:
-      - "8000:8000"
+      - "7000:7000"
     volumes:
       - repository:/app/repository
+      - secrets:/app/secrets
       - logs:/app/logs
     environment:
       - BRANCH=main
+      - REPO_PATH=/app/repository
+      - GIT_URL_SSH=git@github.com:your/repo.git
     restart: always
-#    secrets:
-#      - webhook_secret
 
 volumes:
   repository:
@@ -20,7 +21,4 @@ volumes:
 #      o: addr=${NFS_ADDRESS},nfsvers=4
 #      device: ${NFS_PATH}
   logs:
-
-#secrets:
-#  webhook_secret:
-#    file: ./webhook_secret.txt
+  secrets:

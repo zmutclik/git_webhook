@@ -16,7 +16,7 @@ ensure_webhook_secret()
 
 # Konfigurasi
 CONFIG = {
-    "PORT": 8000,
+    "PORT": 7000,
     "HOST": "0.0.0.0",
     "SECRET_TOKEN": get_secret("webhook_secret") or "your-secret-token-here",
     "REPO_PATH": REPOSITORY_PATH,
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     logger.info(f"Repository: {CONFIG['REPO_PATH']}")
     logger.info(f"Branch: {CONFIG['BRANCH']}")
     logger.info(f"Port: {CONFIG['PORT']}")
-    logger.info("FastAPI Documentation: http://localhost:8000/docs")
+    logger.info("FastAPI Documentation: http://localhost:7000/docs")
     logger.info("========================================================")
 
     uvicorn.run("webhook_server:app", host=CONFIG["HOST"], port=CONFIG["PORT"], reload=False, log_level="info")
