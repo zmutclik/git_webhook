@@ -145,7 +145,12 @@ async def root():
         "app": "Git Webhook Server",
         "version": "1.0.0",
         "status": "running",
-        "endpoints": {"webhook": "/webhook (POST)", "status": "/status (GET)", "manual_pull": "/manual-pull (POST)", "docs": "/docs (GET)"},
+        "endpoints": {
+            "webhook": "/webhook (POST)",
+            "status": "/status (GET)",
+            "manual_pull": "/manual-pull (POST)",
+            "docs": "/docs (GET)",
+        },
     }
 
 

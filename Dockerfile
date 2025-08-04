@@ -14,6 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && mkdir -p secrets \
     && chmod -R 600 secrets \
     && mkdir -p repository \
-    && chmod -R 700 repository
+    && chmod -R 700 repository \
+    && mkdir -p /root/.ssh \
+    && chmod 700 /root/.ssh 
+COPY ssh-config/config /root/.ssh/config
+RUN chmod 600 /root/.ssh/config 
 EXPOSE 7000
 CMD [ "python3","webhook_server.py" ]
