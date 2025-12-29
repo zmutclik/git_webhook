@@ -8,9 +8,6 @@ import uvicorn
 from webhook_func import ensure_webhook_secret, logger, get_secret, verify_signature, pull_repository, process_webhook_background, execute_command
 from webhook_models import WebhookResponse, StatusResponse, ManualPullResponse
 
-# git config --global --add safe.directory /app/repository
-os.system("/bin/git config --global --add safe.directory /app/repository")
-
 BRANCH_NAME = os.environ.get("BRANCH", "master")
 REPOSITORY_PATH = os.environ.get("REPO_PATH", "./repository")
 GIT_URL_SSH = os.environ.get("GIT_URL_SSH", "git@gitlab.com:zmutclik/test-repo.git")

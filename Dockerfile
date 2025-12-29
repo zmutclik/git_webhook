@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && mkdir -p /root/.ssh \
     && chmod 700 /root/.ssh 
 COPY ssh-config/config /root/.ssh/config
+COPY boot.sh /bin/boot.sh
+RUN chmod +x /bin/boot.sh
 RUN chmod 600 /root/.ssh/config 
 EXPOSE 7000
-CMD [ "python3","webhook_server.py" ]
+CMD [ "/bin/boot.sh" ]
